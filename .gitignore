@@ -1,0 +1,7 @@
+/tiepick
+lib/
+backup/
+*.compiled
+*.lps
+*.o
+*.ppu
