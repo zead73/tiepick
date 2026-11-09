@@ -32,7 +32,7 @@ apps that use the portal should work but have not been tried. See
 | Key | Action |
 | --- | --- |
 | Up / Down / PgUp / PgDn | Move the highlight |
-| Home / End | First / last entry (when the edit line is empty) |
+| Home or Left / End | First / last entry (when the edit line is empty) |
 | Enter | Open the highlighted folder; accept a highlighted file |
 | Backspace | Parent folder (when the edit line is empty) |
 | *typing* | Goes to the edit line at the bottom (like Far's command line) |

@@ -746,7 +746,7 @@ begin
     VK_DOWN: begin FList.MoveCur(1); FNavigated := True; end;
     VK_PRIOR: begin FList.MoveCur(-FList.VisRows); FNavigated := True; end;
     VK_NEXT: begin FList.MoveCur(FList.VisRows); FNavigated := True; end;
-    VK_HOME: if blank then begin FList.SetCur(0); FNavigated := True; end else Exit;
+    VK_HOME, VK_LEFT: if blank then begin FList.SetCur(0); FNavigated := True; end else Exit;
     VK_END: if blank then begin FList.SetCur(FList.Count - 1); FNavigated := True; end else Exit;
     VK_BACK: if blank then GoUp else Exit;
     VK_RETURN: EnterPressed;
