@@ -1,0 +1,57 @@
+#!/bin/sh
+# tiepick-enable [--undo]
+#
+# Make xdg-desktop-portal prefer tiepick for the Open/Save dialogs, by
+# editing your per-user portal config. --undo puts the old config back.
+set -eu
+
+key='org.freedesktop.impl.portal.FileChooser'
+desk=${XDG_CURRENT_DESKTOP:-}
+desk=${desk%%:*}
+desk=$(printf %s "$desk" | tr 'A-Z' 'a-z')
+dir=${XDG_CONFIG_HOME:-$HOME/.config}/xdg-desktop-portal
+if [ -n "$desk" ]; then conf=$dir/$desk-portals.conf; else conf=$dir/portals.conf; fi
+bak=$conf.bak-tiepick
+absent=$conf.bak-tiepick-absent    # marks "there was no config before"
+
+restart() {
+  [ -n "${TIEPICK_NO_RESTART:-}" ] && return 0
+  systemctl --user restart xdg-desktop-portal 2>/dev/null || true
+}
+
+if [ "${1:-}" = "--undo" ]; then
+  if [ -f "$bak" ]; then
+    mv "$bak" "$conf"
+    echo "restored $conf"
+  elif [ -f "$absent" ]; then
+    rm -f "$conf" "$absent"
+    echo "removed $conf (there was none before)"
+  else
+    echo "nothing to undo for $conf" >&2
+    exit 1
+  fi
+  restart
+  exit 0
+fi
+
+mkdir -p "$dir"
+if [ -f "$conf" ]; then
+  [ -f "$bak" ] || cp -a "$conf" "$bak"
+else
+  : > "$absent"
+fi
+
+if [ -f "$conf" ] && grep -q "^$key=.*tiepick" "$conf"; then
+  echo "already enabled in $conf"
+elif [ -f "$conf" ] && grep -q "^$key=" "$conf"; then
+  sed -i "s|^\($key=\)|\1tiepick;|" "$conf"
+elif [ -f "$conf" ] && grep -q '^\[preferred\]' "$conf"; then
+  sed -i "/^\[preferred\]/a $key=tiepick;*" "$conf"
+else
+  printf '[preferred]\n%s=tiepick;*\n' "$key" >> "$conf"
+fi
+
+echo "$conf:"
+grep "^$key=" "$conf"
+restart
+echo "Done. Undo with: tiepick-enable --undo"

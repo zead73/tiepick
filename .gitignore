@@ -5,3 +5,4 @@ backup/
 *.lps
 *.o
 *.ppu
+packaging/out/

@@ -122,6 +122,27 @@ redeploy after a rebuild: `pkill -x tiepick; install -m755 tiepick ~/.local/bin/
 Whether an app uses the portal at all depends on the app and its toolkit (GTK
 apps need `GTK_USE_PORTAL=1`, for example). Check that before blaming tiepick.
 
+## Debian package
+
+`packaging/build-deb.sh [release]` builds a `.deb` inside a `debian:<release>`
+container (default `trixie`; needs docker), so the binary links against that
+release's libraries. The result lands in `packaging/out/`.
+
+```sh
+packaging/build-deb.sh trixie
+sudo apt install ./packaging/out/tiepick_0.1.0_amd64.deb
+tiepick-enable          # once, as your normal user
+```
+
+The package installs the binary, the D-Bus service file and the portal file
+system-wide. It deliberately does not touch your home directory: `tiepick-enable`
+adds `tiepick` to the front of your `FileChooser` preference in
+`~/.config/xdg-desktop-portal/<desktop>-portals.conf` (creating it if needed,
+and keeping a backup), then restarts the portal. `tiepick-enable --undo`
+restores the previous config. Log out and back in if an app was already open.
+
+Only `amd64` is built. The build script has been run for `trixie` only.
+
 ## Testing without an app
 
 Call the backend directly (`OpenFile`, `SaveFile` and `SaveFiles` are
