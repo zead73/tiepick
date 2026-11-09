@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>tiepick: a file picker that works like Far</title>
+<meta name="description" content="tiepick replaces the Open and Save dialogs of Linux apps with a single blue Far Manager style panel you drive from the keyboard. Free software, written in Free Pascal and Lazarus.">
+<meta property="og:title" content="tiepick: a file picker that works like Far">
+<meta property="og:description" content="Open and Save dialogs for Linux in one blue panel, driven from the keyboard. Free software.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="https://tiestudio.ca/tiepick/img/og-image.png">
+<meta name="theme-color" content="#0b0f16">
+<link rel="icon" type="image/svg+xml" href="img/icon.svg">
+<link rel="icon" href="img/favicon.ico" sizes="48x48">
+<link rel="apple-touch-icon" href="img/apple-touch-icon.png">
+<style>
+:root {
+  color-scheme: dark;
+  --bg: #0b0f16;
+  --panel: #151d2b;
+  --line: #2b3b54;
+  --gold: #e8b45a;
+  --gold-hi: #f4cf8a;
+  --bone: #e9edf5;
+  --muted: #9fb0c8;
+  --blue: #1a3fa8;
+  --cyan: #7fd1e8;
+  --sans: "Segoe UI", "Noto Sans", "Helvetica Neue", Arial, system-ui, sans-serif;
+  --mono: "JetBrains Mono", "Liberation Mono", "DejaVu Sans Mono", Consolas, monospace;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { margin: 0; background: var(--bg); color: var(--bone); font-family: var(--sans); font-size: 17px; line-height: 1.6; -webkit-text-size-adjust: 100%; }
+img { max-width: 100%; height: auto; display: block; }
+a { color: var(--gold-hi); }
+code, kbd { font-family: var(--mono); font-size: .88em; }
+.wrap { width: min(1080px, 100% - 32px); margin-inline: auto; }
+
+/* top bar */
+.bar { position: absolute; inset: 0 0 auto 0; z-index: 5; }
+.bar .wrap { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-block: 14px; }
+.left { display: flex; align-items: center; gap: 18px; }
+.brand { display: flex; align-items: center; gap: 10px; color: var(--bone); text-decoration: none; font-weight: 800; font-size: 1.2rem; }
+.brand img { width: 34px; height: 34px; }
+.studio { color: var(--bone); text-decoration: none; font-size: .9rem; opacity: .85; padding: 6px 12px; border: 1px solid rgba(255,255,255,.28); border-radius: 999px; white-space: nowrap; }
+.studio:hover, .studio:focus-visible { opacity: 1; color: var(--gold-hi); border-color: var(--gold-hi); }
+@media (max-width: 480px) { .brand { display: none; } }
+.bar nav { display: flex; gap: 22px; font-size: .95rem; }
+.bar nav a { color: var(--bone); text-decoration: none; opacity: .85; }
+.bar nav a:hover { opacity: 1; color: var(--gold-hi); }
+@media (max-width: 720px) { .bar nav a:not(.keep) { display: none; } }
+
+/* buttons */
+.btn { display: inline-block; padding: 12px 26px; border-radius: 8px; font: inherit; font-weight: 700; text-decoration: none; border: 2px solid var(--gold); color: var(--bone); background: rgba(11,15,22,.5); }
+.btn:hover, .btn:focus-visible { border-color: var(--gold-hi); color: #fff; }
+.btn.primary { background: var(--gold); color: #1a1408; }
+.btn.primary:hover, .btn.primary:focus-visible { background: var(--gold-hi); color: #1a1408; }
+
+/* hero */
+.hero { position: relative; text-align: center; overflow: hidden; padding: 120px 0 70px;
+  background: radial-gradient(ellipse at 50% 0%, rgba(26,63,168,.45), transparent 62%), radial-gradient(ellipse at 50% 100%, rgba(232,180,90,.10), transparent 55%); }
+.hero .mark { width: 132px; height: 132px; margin: 0 auto 18px; filter: drop-shadow(0 10px 30px rgba(26,63,168,.55)); }
+.hero h1 { margin: 0; font-size: clamp(44px, 9vw, 84px); line-height: 1; font-weight: 800; letter-spacing: -.02em; }
+.hero .tagline { margin: 14px auto 0; max-width: 28em; font-size: clamp(19px, 2.6vw, 25px); color: var(--gold-hi); font-weight: 600; }
+.hero .lead { margin: 18px auto 30px; max-width: 36em; color: var(--muted); }
+.hero .actions { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+.chips { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-top: 26px; }
+.chips span { padding: 4px 14px; border: 1px solid var(--line); border-radius: 999px; font-size: 14px; color: var(--muted); background: rgba(21,29,43,.6); }
+
+/* screenshots */
+.shot { margin: 0; }
+.shot img { border-radius: 10px; border: 1px solid var(--line); box-shadow: 0 22px 60px rgba(0,0,0,.6), 0 0 50px rgba(26,63,168,.28); }
+.shot figcaption { margin-top: 12px; color: var(--muted); font-size: .95rem; text-align: center; }
+.hero-shot { margin-top: 8px; padding-bottom: 8px; }
+.hero-shot img { width: min(940px, 100%); margin-inline: auto; }
+.pair { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; margin-top: 8px; }
+@media (max-width: 800px) { .pair { grid-template-columns: 1fr; } }
+
+/* sections */
+section { padding: 64px 0 8px; }
+h2 { margin: 0 0 8px; font-size: clamp(26px, 4vw, 36px); line-height: 1.15; color: var(--gold); }
+.sub { margin: 0 0 28px; color: var(--muted); max-width: 40em; }
+.cols { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+@media (max-width: 860px) { .cols { grid-template-columns: 1fr; } }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 20px 22px; }
+.card h3 { margin: 0 0 6px; font-size: 1.1rem; color: var(--bone); }
+.card p { margin: 0; color: var(--muted); font-size: .97rem; }
+
+table { width: 100%; border-collapse: collapse; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+th, td { text-align: left; padding: 9px 16px; border-bottom: 1px solid var(--line); vertical-align: top; }
+tr:last-child td { border-bottom: 0; }
+td:first-child { white-space: nowrap; width: 1%; }
+kbd { display: inline-block; padding: 1px 8px; margin: 1px 2px 1px 0; border: 1px solid #44566f; border-bottom-width: 2px; border-radius: 6px; background: #0f1623; color: var(--cyan); }
+td:last-child { color: var(--muted); }
+.note { margin-top: 14px; color: var(--muted); font-size: .95rem; }
+
+pre { margin: 0 0 14px; padding: 14px 18px; overflow-x: auto; background: #070a10; border: 1px solid var(--line); border-radius: 10px; font-family: var(--mono); font-size: .88rem; line-height: 1.5; color: #d7e0ee; }
+.get { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 28px; align-items: start; }
+.get > div { min-width: 0; }
+.get p, .card p, .sub { overflow-wrap: anywhere; }
+@media (max-width: 860px) { .get { grid-template-columns: minmax(0, 1fr); } }
+.get h3 { margin: 22px 0 8px; font-size: 1.05rem; color: var(--bone); }
+.get h3:first-child { margin-top: 0; }
+ul.plain { margin: 0; padding-left: 1.2em; color: var(--muted); }
+ul.plain li { margin: 5px 0; }
+.getbtn { margin: 4px 0 26px; }
+
+footer { margin-top: 64px; padding: 28px 0 56px; border-top: 1px solid var(--line); text-align: center; color: var(--muted); font-size: .93rem; }
+footer p { margin: 4px 0; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+</style>
+</head>
+<body id="top">
+
+<div class="bar"><div class="wrap">
+  <div class="left">
+    <a class="studio" href="/" title="Back to all the games and apps">&larr; Tie Studio</a>
+    <a class="brand" href="#top"><img src="img/icon.svg" alt="" width="34" height="34">tiepick</a>
+  </div>
+  <nav>
+    <a href="#screens">Screens</a>
+    <a href="#why">What it does</a>
+    <a href="#keys">Keys</a>
+    <a class="keep" href="#get">Get it</a>
+  </nav>
+</div></div>
+
+<header class="hero">
+  <div class="wrap">
+    <img class="mark" src="img/icon.svg" width="132" height="132" alt="The tiepick logo: a blue file panel with a gold check mark">
+    <h1>tiepick</h1>
+    <p class="tagline">A file picker that works like Far.</p>
+    <p class="lead">The Open and Save dialogs of your Linux apps, in one blue panel that you drive from the keyboard. Type, arrow, Enter. No mouse needed.</p>
+    <div class="actions">
+      <a class="btn primary" href="https://github.com/zead73/tiepick">Get it on GitHub</a>
+      <a class="btn" href="#screens">See it</a>
+    </div>
+    <div class="chips"><span>Free software</span><span>MIT licence</span><span>Linux</span><span>Free Pascal + Lazarus</span></div>
+  </div>
+</header>
+
+<main>
+<section id="screens" style="padding-top:24px">
+  <div class="wrap">
+    <figure class="shot hero-shot">
+      <img src="img/shot-open.png" width="966" height="700" alt="The tiepick Open dialog listing a folder of documents, with two files marked in yellow, folders first and a Name, Size and Modified column layout.">
+      <figcaption>An Open dialog. Folders first, files filtered to documents, two files marked with <kbd>Insert</kbd>.</figcaption>
+    </figure>
+    <div class="pair">
+      <figure class="shot">
+        <img src="img/shot-save.png" width="966" height="700" loading="lazy" alt="The tiepick Save dialog with the file name quarterly-report.pdf in the edit line at the bottom.">
+        <figcaption>Save as. The suggested name waits in the line at the bottom.</figcaption>
+      </figure>
+      <figure class="shot">
+        <img src="img/shot-folder.png" width="966" height="700" loading="lazy" alt="The tiepick folder chooser showing only folders.">
+        <figcaption>Choosing a folder. Only folders are listed.</figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<section id="why">
+  <div class="wrap">
+    <h2>What it does</h2>
+    <p class="sub">tiepick plugs into <code>xdg-desktop-portal</code> as the file chooser. Apps that ask the desktop portal for an Open or Save dialog, such as browsers, Electron apps and Flatpaks, get this one instead of the toolkit's own.</p>
+    <div class="cols">
+      <div class="card"><h3>Keyboard first</h3><p>Arrows move, Enter opens, Backspace goes up a folder. Whatever you type lands in the line at the bottom, like Far's command line.</p></div>
+      <div class="card"><h3>One pane, nothing extra</h3><p>It only picks. No copying, moving or deleting, and no previews to wait for. Open it, choose, done.</p></div>
+      <div class="card"><h3>Marks several files</h3><p>Open dialogs that allow more than one file let you mark with <kbd>Insert</kbd> and accept with <kbd>F10</kbd>.</p></div>
+      <div class="card"><h3>File-type filters</h3><p>Press <kbd>Tab</kbd> to cycle the filters the app offers. An "All files" entry is always there.</p></div>
+      <div class="card"><h3>Save keeps your name</h3><p>Walk into another folder and the suggested file name stays put. Press Enter to save, or <kbd>F7</kbd> to make a folder first.</p></div>
+      <div class="card"><h3>Places and hidden files</h3><p><kbd>F2</kbd> jumps to home, your mounted drives and GTK bookmarks. <kbd>Ctrl</kbd>+<kbd>H</kbd> shows hidden files.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="keys">
+  <div class="wrap">
+    <h2>Keys</h2>
+    <p class="sub">The ones you will use every day.</p>
+    <table>
+      <tr><td><kbd>&uarr;</kbd><kbd>&darr;</kbd><kbd>PgUp</kbd><kbd>PgDn</kbd></td><td>Move the highlight</td></tr>
+      <tr><td><kbd>Home</kbd> or <kbd>&larr;</kbd></td><td>Jump to the top of the list (while the typing line is empty)</td></tr>
+      <tr><td><kbd>End</kbd></td><td>Jump to the bottom</td></tr>
+      <tr><td><kbd>Enter</kbd></td><td>Open the highlighted folder, or accept the highlighted file</td></tr>
+      <tr><td><kbd>Backspace</kbd></td><td>Up to the parent folder (while the typing line is empty)</td></tr>
+      <tr><td>type</td><td>Jumps to a matching name. Type a path such as <code>/mnt/data</code> and press Enter to go there</td></tr>
+      <tr><td><kbd>Insert</kbd> <kbd>Space</kbd></td><td>Mark or unmark a file (dialogs that allow several)</td></tr>
+      <tr><td><kbd>Tab</kbd></td><td>Next file-type filter</td></tr>
+      <tr><td><kbd>F2</kbd></td><td>Places: home, drives, bookmarks</td></tr>
+      <tr><td><kbd>F7</kbd></td><td>Make a new folder</td></tr>
+      <tr><td><kbd>F10</kbd></td><td>Accept: Open, Save, or choose this folder</td></tr>
+      <tr><td><kbd>Esc</kbd></td><td>Clear the typing line, then cancel</td></tr>
+    </table>
+  </div>
+</section>
+
+<section id="get">
+  <div class="wrap">
+    <h2>Get it</h2>
+    <p class="sub">tiepick is free software under the MIT licence. The code, the README and the issue tracker are on GitHub.</p>
+    <div class="getbtn"><a class="btn primary" href="https://github.com/zead73/tiepick">Get tiepick on GitHub</a></div>
+    <div class="get">
+      <div>
+        <h3>Build from source</h3>
+        <p style="color:var(--muted);margin:0 0 10px">You need Free Pascal and Lazarus with the Qt5 widgetset, plus <code>libdbus</code>.</p>
+<pre>git clone https://github.com/zead73/tiepick
+cd tiepick
+lazbuild --ws=qt5 tiepick.lpi</pre>
+        <p style="color:var(--muted);margin:0">The README has the few files to put in your home folder, and the one line that tells the portal to prefer tiepick. Keep another file chooser after it in that line, so you still get a dialog if tiepick is ever missing.</p>
+
+        <h3>Debian and Ubuntu</h3>
+        <p style="color:var(--muted);margin:0">The repository includes a script that builds a <code>.deb</code> inside a clean Debian container, and a small <code>tiepick-enable</code> command that turns it on for your user and can turn it off again. There is no ready-made download yet, so you build the package yourself.</p>
+      </div>
+      <div>
+        <h3>Where it has been tried</h3>
+        <ul class="plain">
+          <li>Arch Linux, LXQt on X11, with the Vivaldi browser</li>
+          <li>The Debian 13 package, on a laptop running LXQt</li>
+        </ul>
+        <h3>Good to know</h3>
+        <ul class="plain">
+          <li>It only affects apps that use the desktop portal. GTK apps usually need <code>GTK_USE_PORTAL=1</code>, and some Qt setups use their own dialog.</li>
+          <li>It does not remember the last folder. The app chooses where it starts.</li>
+          <li>Filters match file name patterns such as <code>*.png</code>. Filters that only name a MIME type are ignored.</li>
+          <li>Only X11 has been tried so far.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <p><strong>tiepick</strong>, free software under the <a href="https://github.com/zead73/tiepick/blob/main/LICENSE">MIT licence</a>. An independent project, not affiliated with Far Manager.</p>
+    <p><a href="/">Tie Studio</a> &nbsp;·&nbsp; <a href="https://github.com/zead73/tiepick">GitHub</a></p>
+    <p>Web page designed by Claude.</p>
+  </div>
+</footer>
+
+</body>
+</html>

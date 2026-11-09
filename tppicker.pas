@@ -10,7 +10,7 @@ interface
 
 uses
   Classes, SysUtils, Graphics, Controls, Forms, StdCtrls, ExtCtrls, Menus,
-  Dialogs, LCLType, Masks, LazUTF8, tpdbus;
+  Dialogs, LCLType, Masks, LazUTF8, BaseUnix, Unix, unixutil, DateUtils, tpdbus;
 
 type
   TEntry = record
@@ -99,6 +99,24 @@ implementation
 
 var
   CBg, CFrame, CFile, CDir, CCur, CCurText, CSel, CCurSel, CHead: TColor;
+
+{ Local modification time. FindFirst's timestamp (and DateUtils) apply today's
+  UTC offset to every date, which is an hour off for dates in the other half
+  of the DST year; GetLocalTimezone looks the offset up for that date. }
+function LocalMTime(const Path: string): TDateTime;
+var
+  st: Stat;
+begin
+  Result := 0;
+  if FpStat(Path, st) <> 0 then
+    if FpLStat(Path, st) <> 0 then Exit;
+  Result := UnixToDateTime(st.st_mtime);
+  if (st.st_mtime >= 0) and (st.st_mtime <= High(LongInt)) then
+  begin
+    GetLocalTimezone(cint(st.st_mtime));
+    Result := Result + TZSeconds / 86400;
+  end;
+end;
 
 function FmtSize(N: Int64): string;
 begin
@@ -442,7 +460,7 @@ begin
       e.IsDir := ((sr.Attr and faDirectory) <> 0) or
         (((sr.Attr and faSymLink) <> 0) and DirectoryExists(full));
       e.Size := sr.Size;
-      try e.MTime := FileDateToDateTime(sr.Time); except e.MTime := 0; end;
+      e.MTime := LocalMTime(full);
       if (not e.IsDir) and (not Matches(e.Name)) then Continue;
       SetLength(raw, n + 1);
       raw[n] := e;
