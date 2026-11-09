@@ -130,7 +130,7 @@ release's libraries. The result lands in `packaging/out/`.
 
 ```sh
 packaging/build-deb.sh trixie
-sudo apt install ./packaging/out/tiepick_0.1.0_amd64.deb
+sudo apt install ./packaging/out/tiepick_0.1.1_amd64.deb
 tiepick-enable          # once, as your normal user
 ```
 
